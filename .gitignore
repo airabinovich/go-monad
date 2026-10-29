@@ -15,3 +15,11 @@ coverage.html
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# IDEA Project files
+.idea/
+*.iml
+
+# VsCode Project Files
+.vscode/
+

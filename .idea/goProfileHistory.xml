@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GoProfileHistory">
+    <profile entry="$USER_HOME$/GoLandProfiles/TestListOf_in_github_com_airabinovich_go-monad-memory_profile-2026-10-28-192150-076.pprof">
+      <GoProfileMapEntry>
+        <option name="buildAnchorMillis" value="1793211710154" />
+        <option name="file" value="TestListOf_in_github_com_airabinovich_go-monad-memory_profile-2026-10-28-192150-076.pprof" />
+        <option name="ours" value="true" />
+      </GoProfileMapEntry>
+    </profile>
+    <profile entry="$USER_HOME$/GoLandProfiles/TestListFlatMap_in_github_com_airabinovich_go-monad-memory_profile-2026-10-28-192215-641.pprof">
+      <GoProfileMapEntry>
+        <option name="buildAnchorMillis" value="1793211735687" />
+        <option name="file" value="TestListFlatMap_in_github_com_airabinovich_go-monad-memory_profile-2026-10-28-192215-641.pprof" />
+        <option name="ours" value="true" />
+      </GoProfileMapEntry>
+    </profile>
+    <profile entry="$USER_HOME$/GoLandProfiles/TestListFlatMap_in_github_com_airabinovich_go-monad-cpu_profile-2026-10-28-192220-313.pprof">
+      <GoProfileMapEntry>
+        <option name="buildAnchorMillis" value="1793211740354" />
+        <option name="file" value="TestListFlatMap_in_github_com_airabinovich_go-monad-cpu_profile-2026-10-28-192220-313.pprof" />
+        <option name="ours" value="true" />
+      </GoProfileMapEntry>
+    </profile>
+    <profile entry="$USER_HOME$/GoLandProfiles/TestListFlatMap_in_github_com_airabinovich_go-monad-cpu_profile-2026-10-28-192233-768.pprof">
+      <GoProfileMapEntry>
+        <option name="buildAnchorMillis" value="1793211753804" />
+        <option name="file" value="TestListFlatMap_in_github_com_airabinovich_go-monad-cpu_profile-2026-10-28-192233-768.pprof" />
+        <option name="ours" value="true" />
+      </GoProfileMapEntry>
+    </profile>
+  </component>
+</project>

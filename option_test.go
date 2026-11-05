@@ -96,3 +96,24 @@ func TestOptionToSequence(t *testing.T) {
 	assert.Equal(t, ListOf(42), OptionOf(new(42)).ToSequence().ToList())
 	assertEmptySequence(t, OptionOf[int](nil).ToSequence())
 }
+
+func TestOptionString(t *testing.T) {
+	assert.Equal(t, "42", OptionOf(new(42)).String())
+	assert.Equal(t, "0", OptionOf(new(0)).String())
+	assert.Equal(t, "<nil>", OptionOf[int](nil).String())
+}
+
+func TestOptionToResult(t *testing.T) {
+	elem := new(42)
+	called := false
+	present := OptionOf(elem).ToResult(func() (err error) {
+		called = true
+		return errBoom
+	})
+	assert.False(t, called, "ToResult must not call ifEmpty on a present Option")
+	assertSuccess(t, present, 42)
+	assert.Same(t, elem, present.GetOrNil(), "ToResult must keep the given pointer")
+
+	assertFailure(t, OptionOf[int](nil).ToResult(func() (err error) { return errBoom }), errBoom)
+	assertEmptySuccess(t, OptionOf[int](nil).ToResult(func() (err error) { return nil }))
+}

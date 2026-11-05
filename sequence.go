@@ -8,7 +8,7 @@ import (
 // Sequence is a lazy, ordered sequence of values of type T. Unlike a List,
 // its elements are not directly accessible: transformations (Map, FlatMap,
 // Filter) only describe work, and nothing runs until an accessor (IsEmpty,
-// First, ToList, ToSet) requests elements. Accessors evaluate only as many
+// First, ToList, ToSet) or a range over All requests elements. Accessors evaluate only as many
 // elements as they need, and every accessor call evaluates the Sequence
 // again from its source, so callbacks may run more than once. Unlike a Set,
 // a Sequence may hold duplicates.
@@ -35,14 +35,14 @@ func SequenceOfSlice[T any](elems []T) (sequence Sequence[T]) {
 }
 
 // SequenceOfSet returns a lazy Sequence of the elements of the Set in
-// unspecified order, or an empty Sequence if the Set is empty. The Set is not
+// unspecified order, or an empty Sequence if the Set is nil or empty. The Set is not
 // copied: it is read each time the Sequence is evaluated, so the order may
 // differ between evaluations and changes made to the Set between
 // evaluations are visible.
-func SequenceOfSet[T any](s Set[T]) (sequence Sequence[T]) {
+func SequenceOfSet[T any](s *Set[T]) (sequence Sequence[T]) {
 	return Sequence[T]{
 		seq: func(yield func(T) bool) {
-			for _, elems := range s.elements {
+			for _, elems := range s.buckets() {
 				for elem := range elems.All() {
 					if !yield(elem) {
 						return
@@ -139,13 +139,12 @@ func (s Sequence[T]) ToList() (list *List[T]) {
 }
 
 // ToSet returns a Set of the distinct elements, or an empty Set if the
-// Sequence is empty. It is an accessor: it evaluates the whole Sequence.
-func (s Sequence[T]) ToSet(hashFunc HashFunc[T], eqFunc EqFunc[T]) (set Set[T]) {
+// Sequence is empty. hashFunc and eqFunc define how the Set hashes and compares
+// elements, see HashFunc and EqFunc. It is an accessor: it evaluates the whole
+// Sequence.
+func (s Sequence[T]) ToSet(hashFunc HashFunc[T], eqFunc EqFunc[T]) (set *Set[T]) {
 	set = SetOf[T](hashFunc, eqFunc)
-	if s.seq == nil {
-		return set
-	}
-	for elem := range s.seq {
+	for elem := range s.All() {
 		set.Add(elem)
 	}
 	return set

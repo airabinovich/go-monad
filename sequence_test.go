@@ -1,7 +1,6 @@
 package monad
 
 import (
-	"fmt"
 	"slices"
 	"strconv"
 	"testing"
@@ -18,20 +17,12 @@ func assertEmptySequence[T comparable](t *testing.T, s Sequence[T], msgAndArgs .
 	assertEmptyList(t, s.ToList(), msgAndArgs...)
 }
 
-func assertSequenceContainsAll[T any](t *testing.T, elements []T, s Sequence[T], msgAndArgs ...any) {
+// assertSequenceElements checks that s yields exactly the expected elements, in
+// any order but with the same number of occurrences, so extras and duplicates
+// are detected.
+func assertSequenceElements[T any](t *testing.T, expected []T, s Sequence[T], msgAndArgs ...any) {
 	t.Helper()
-	seqToList := s.ToList()
-	for _, element := range elements {
-		assert.True(t, seqToList.Contains(element), fmt.Sprintf("%v not in sequence.", element), msgAndArgs)
-	}
-}
-
-func assertSequenceDoesNotContainsAny[T any](t *testing.T, elements []T, s Sequence[T]) {
-	t.Helper()
-	seqToList := s.ToList()
-	for _, element := range elements {
-		assert.False(t, seqToList.Contains(element), fmt.Sprintf("%v not in sequence.", element))
-	}
+	assert.ElementsMatch(t, expected, s.ToList().elements, msgAndArgs...)
 }
 
 func TestSequenceOf(t *testing.T) {
@@ -82,6 +73,23 @@ func TestSequenceToSet(t *testing.T) {
 		SetOf(HashComparable[int](), EqComparable[int](), 1, 2, 3),
 		SequenceOf(1, 2, 2, 3, 1).ToSet(HashComparable[int](), EqComparable[int]()),
 		"duplicates must be removed")
+	assertEmptySet(t, SequenceOf[int]().ToSet(HashComparable[int](), EqComparable[int]()))
+
+	var zero Sequence[int]
+	assertEmptySet(t, zero.ToSet(HashComparable[int](), EqComparable[int]()), "ToSet on the zero value must return an empty Set")
+}
+
+func TestSequenceAll(t *testing.T) {
+	var collected []int
+	for v := range SequenceOf(1, 2, 3).All() {
+		collected = append(collected, v)
+	}
+	assert.Equal(t, []int{1, 2, 3}, collected)
+
+	var zero Sequence[int]
+	for range zero.All() {
+		t.Fatal("the zero value must not yield any element")
+	}
 }
 
 func TestSequenceMap(t *testing.T) {

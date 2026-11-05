@@ -26,3 +26,7 @@ coverage.html
 # Manual testing files
 cmd/
 
+# Patch files
+*.diff
+*.patch
+

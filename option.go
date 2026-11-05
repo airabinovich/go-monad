@@ -15,7 +15,8 @@ func OptionOf[T any](elem *T) (option Option[T]) {
 	return Option[T]{value: elem}
 }
 
-// String returns a string representation of the Option depending on its content
+// String returns the held value formatted with fmt.Sprint, or "<nil>" if the
+// Option is empty.
 func (o Option[T]) String() string {
 	if o.value == nil {
 		return "<nil>"
@@ -88,8 +89,9 @@ func (o Option[T]) ToSequence() (sequence Sequence[T]) {
 	return SequenceOf(*o.value)
 }
 
-// ToResult returns a Result with the held value if it exists,
-// or with an error provided by ifEmpty function if the Option is empty.
+// ToResult returns a Result holding the same pointer as the Option, not a copy,
+// or, if the Option is empty, a Result holding the error returned by ifEmpty.
+// ifEmpty must not be nil. If it returns nil, the Result is an empty success.
 func (o Option[T]) ToResult(ifEmpty func() error) Result[T] {
 	if o.value == nil {
 		return ResultOf[T](nil, ifEmpty())

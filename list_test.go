@@ -8,25 +8,35 @@ import (
 )
 
 // assertEmptyList checks that l is empty but not nil, so it is safe to chain.
-func assertEmptyList[T comparable](t *testing.T, l List[T], msgAndArgs ...any) {
+func assertEmptyList[T any](t *testing.T, l *List[T], msgAndArgs ...any) {
 	t.Helper()
 	assert.NotNil(t, l, msgAndArgs...)
-	assert.Empty(t, l, msgAndArgs...)
+	assert.Empty(t, l.elements, msgAndArgs...)
+}
+
+func assertListsAreEqual[T any](t *testing.T, l *List[T], expected *List[T], msgAndArgs ...any) {
+	t.Helper()
+	assert.True(t, expected.Equal(l), msgAndArgs...)
+}
+
+func assertListsAreNotEqual[T any](t *testing.T, l *List[T], expected *List[T], msgAndArgs ...any) {
+	t.Helper()
+	assert.False(t, expected.Equal(l), msgAndArgs...)
 }
 
 func TestListOf(t *testing.T) {
-	assert.Equal(t, ListOfSlice([]int{1, 2, 3}), ListOf(1, 2, 3))
+	assertListsAreEqual(t, ListOfSlice([]int{1, 2, 3}), ListOf(1, 2, 3))
 	assertEmptyList(t, ListOf[int]())
 
 	elems := []int{1, 2, 3}
-	assert.Same(t, &elems[0], &ListOf(elems...)[0], "ListOf(s...) must not copy s")
+	assert.Same(t, &elems[0], ListOf(elems...).FirstOrNil(), "ListOf(s...) must not copy s")
 }
 
 func TestListOfSlice(t *testing.T) {
 	elems := []int{1, 2, 3}
 	list := ListOfSlice(elems)
-	assert.Equal(t, ListOf(1, 2, 3), list)
-	assert.Same(t, &elems[0], &list[0], "ListOfSlice must not copy elems")
+	assertListsAreEqual(t, ListOf(1, 2, 3), list)
+	assert.Same(t, &elems[0], list.FirstOrNil(), "ListOfSlice must not copy elems")
 
 	assertEmptyList(t, ListOfSlice[int](nil))
 	assertEmptyList(t, ListOfSlice([]int{}))
@@ -38,7 +48,7 @@ func TestListZeroValueIsEmpty(t *testing.T) {
 	assert.False(t, l.First().IsPresent())
 	assertEmptyList(t, l.Map(strconv.Quote), "methods on the zero value must return non-nil Lists")
 	assertEmptyList(t, l.Filter(func(s string) (keep bool) { return true }))
-	assertEmptyList(t, l.FlatMap(func(s string) (pair List[string]) { return ListOf(s, s) }))
+	assertEmptyList(t, l.FlatMap(func(s string) (pair *List[string]) { return ListOf(s, s) }))
 }
 
 func TestListIsEmpty(t *testing.T) {
@@ -46,19 +56,29 @@ func TestListIsEmpty(t *testing.T) {
 	assert.True(t, ListOf[int]().IsEmpty())
 }
 
+func TestListsAreEqual(t *testing.T) {
+	assertListsAreEqual(t, ListOf[int](), ListOf[int]())
+	assertListsAreEqual(t, ListOf[int](1, 2, 3), ListOf[int](1, 2, 3))
+}
+
+func TestListsAreNotEqual(t *testing.T) {
+	assertListsAreNotEqual(t, ListOf[int](1), ListOf[int]())
+	assertListsAreNotEqual(t, ListOf[int](1, 2), ListOf[int](2, 1))
+}
+
 func TestListFirst(t *testing.T) {
 	list := ListOf(1, 2, 3)
-	assert.Same(t, &list[0], list.First().GetOrNil(), "First must point into the List, not copy")
+	assert.Same(t, list.FirstOrNil(), list.First().GetOrNil(), "First must point into the List, not copy")
 	assert.False(t, ListOf[int]().First().IsPresent())
 }
 
 func TestListFirstOrNil(t *testing.T) {
 	list := ListOf(1, 2, 3)
-	assert.Same(t, &list[0], list.FirstOrNil(), "First must point into the List, not copy")
+	assert.Same(t, &list.elements[0], list.FirstOrNil(), "First must point into the List, not copy")
 }
 
 func TestListMap(t *testing.T) {
-	assert.Equal(t, ListOf("1", "2", "3"), ListOf(1, 2, 3).Map(strconv.Itoa))
+	assertListsAreEqual(t, ListOf("1", "2", "3"), ListOf(1, 2, 3).Map(strconv.Itoa))
 
 	called := false
 	empty := ListOf[int]().Map(func(i int) (s string) {
@@ -70,7 +90,7 @@ func TestListMap(t *testing.T) {
 }
 
 func TestListFlatMap(t *testing.T) {
-	repeat := func(i int) (repeated List[int]) {
+	repeat := func(i int) (repeated *List[int]) {
 		elems := make([]int, i)
 		for j := range elems {
 			elems[j] = i
@@ -82,7 +102,7 @@ func TestListFlatMap(t *testing.T) {
 	assertEmptyList(t, ListOf(0, 0).FlatMap(repeat), "f returning only empty Lists must yield empty")
 
 	called := false
-	empty := ListOf[int]().FlatMap(func(i int) (repeated List[int]) {
+	empty := ListOf[int]().FlatMap(func(i int) (repeated *List[int]) {
 		called = true
 		return repeat(i)
 	})
@@ -93,12 +113,12 @@ func TestListFlatMap(t *testing.T) {
 func TestListFilter(t *testing.T) {
 	isEven := func(i int) (even bool) { return i%2 == 0 }
 
-	assert.Equal(t, ListOf(2, 4), ListOf(1, 2, 3, 4).Filter(isEven))
+	assertListsAreEqual(t, ListOf(2, 4), ListOf(1, 2, 3, 4).Filter(isEven), "should contain only even numbers")
 	assertEmptyList(t, ListOf(1, 3).Filter(isEven))
 
 	source := ListOf(1, 2, 3, 4)
 	source.Filter(isEven)
-	assert.Equal(t, ListOf(1, 2, 3, 4), source, "Filter must not modify the source List")
+	assertListsAreEqual(t, ListOf(1, 2, 3, 4), source, "Filter must not modify the source List")
 
 	called := false
 	empty := ListOf[int]().Filter(func(i int) (keep bool) {
@@ -113,18 +133,23 @@ func TestListChaining(t *testing.T) {
 	got := ListOf(1, 2, 3, 4).
 		Filter(func(i int) (even bool) { return i%2 == 0 }).
 		Map(strconv.Itoa).
-		FlatMap(func(s string) (pair List[string]) { return ListOf(s, s+"!") }).
+		FlatMap(func(s string) (pair *List[string]) { return ListOf(s, s+"!") }).
 		First().
 		GetOrDefault("none")
 	assert.Equal(t, "2", got)
 }
 
 func TestListToSet(t *testing.T) {
-	assert.Equal(t, SetOf(1, 2, 3), ListOf(1, 2, 2, 3, 1).ToSet(), "duplicates must be removed")
-	assertEmptySet(t, ListOf[int]().ToSet())
+	assertSetsAreEqual(
+		t,
+		SetOf(HashComparable[int](), EqComparable[int](), 1, 2, 3),
+		ListOf(1, 2, 2, 3, 1).ToSet(HashComparable[int](), EqComparable[int]()),
+		"duplicates must be removed",
+	)
+	assertEmptySet(t, ListOf[int]().ToSet(HashComparable[int](), EqComparable[int]()))
 
 	var l List[int]
-	assertEmptySet(t, l.ToSet(), "ToSet on the zero value must return a non-nil Set")
+	assertEmptySet(t, l.ToSet(HashComparable[int](), EqComparable[int]()), "ToSet on the zero value must return a non-nil Set")
 }
 
 func TestListToSequence(t *testing.T) {
@@ -132,7 +157,7 @@ func TestListToSequence(t *testing.T) {
 	sequence := list.ToSequence()
 	assert.Equal(t, list, sequence.ToList(), "order and duplicates must be kept")
 
-	list[0] = 10
+	list.elements[0] = 10
 	assert.Equal(t, 10, sequence.First().GetOrDefault(-1), "the List must be read when evaluated, not copied")
 
 	assertEmptySequence(t, ListOf[int]().ToSequence())

@@ -3,14 +3,17 @@ package monad
 import "fmt"
 
 // Result represents the outcome of a process that can either return a
-// value of type T or an error
-type Result[T comparable] struct {
+// value of type T or an error.
+//
+// A nil value can also be valid, the presence of an error determines that a value is not valid,
+// therefore an existing error invalidates even a present value
+type Result[T any] struct {
 	value *T
 	err   error
 }
 
 // ResultOf returns a Result holding the provided value and error
-func ResultOf[T comparable](res *T, err error) (result Result[T]) {
+func ResultOf[T any](res *T, err error) (result Result[T]) {
 	return Result[T]{value: res, err: err}
 }
 
@@ -21,12 +24,15 @@ func (r Result[T]) String() string {
 	if r.err != nil {
 		return r.err.Error()
 	}
+	if r.value == nil {
+		return "<nil>"
+	}
 	return fmt.Sprintf("%v", *r.value)
 }
 
 // Map applies f to the held value and returns a Result with the result.
 // If the Result hold an error, f is not called and a Result with an error is returned.
-func (r Result[T]) Map[U comparable](f func(T) U) (res Result[U]) {
+func (r Result[T]) Map[U any](f func(T) U) (res Result[U]) {
 	if r.err != nil {
 		return Result[U]{err: r.err}
 	}
@@ -42,7 +48,7 @@ func (r Result[T]) Map[U comparable](f func(T) U) (res Result[U]) {
 
 // FlatMap applies f to the held value and returns the Result produced by f.
 // If the Result holds an error, f is not called and a Result with an error is returned.
-func (r Result[T]) FlatMap[U comparable](f func(T) Result[U]) (res Result[U]) {
+func (r Result[T]) FlatMap[U any](f func(T) Result[U]) (res Result[U]) {
 	if r.err != nil {
 		return Result[U]{err: r.err}
 	}

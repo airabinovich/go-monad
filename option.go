@@ -5,13 +5,13 @@ import "fmt"
 
 // Option represents an optional value: it either holds a value of type T
 // or is empty. The zero value of Option is empty.
-type Option[T comparable] struct {
+type Option[T any] struct {
 	value *T
 }
 
 // OptionOf returns an Option holding the value pointed to by elem,
 // or an empty Option if elem is nil.
-func OptionOf[T comparable](elem *T) (option Option[T]) {
+func OptionOf[T any](elem *T) (option Option[T]) {
 	return Option[T]{value: elem}
 }
 
@@ -25,7 +25,7 @@ func (o Option[T]) String() string {
 
 // Map applies f to the held value and returns an Option with the result.
 // If the Option is empty, f is not called and an empty Option is returned.
-func (o Option[T]) Map[U comparable](f func(T) U) (mapped Option[U]) {
+func (o Option[T]) Map[U any](f func(T) U) (mapped Option[U]) {
 	if o.value == nil {
 		return Option[U]{}
 	}
@@ -35,7 +35,7 @@ func (o Option[T]) Map[U comparable](f func(T) U) (mapped Option[U]) {
 
 // FlatMap applies f to the held value and returns the Option produced by f.
 // If the Option is empty, f is not called and an empty Option is returned.
-func (o Option[T]) FlatMap[U comparable](f func(T) Option[U]) (mapped Option[U]) {
+func (o Option[T]) FlatMap[U any](f func(T) Option[U]) (mapped Option[U]) {
 	if o.value == nil {
 		return Option[U]{}
 	}
@@ -72,7 +72,7 @@ func (o Option[T]) GetOrDefault(other T) (value T) {
 
 // ToList returns a List holding a copy of the held value, or an empty List
 // if the Option is empty.
-func (o Option[T]) ToList() (list List[T]) {
+func (o Option[T]) ToList() (list *List[T]) {
 	if o.value == nil {
 		return ListOf[T]()
 	}

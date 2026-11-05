@@ -60,12 +60,6 @@ func TestResultString(t *testing.T) {
 	assert.Equal(t, "boom", ResultOf(new(42), errBoom).String(), "the error takes precedence over the value")
 }
 
-// Documents the current behavior: String dereferences a nil value.
-// If String is changed to handle this case, update this test.
-func TestResultStringWithoutValueNorErrorPanics(t *testing.T) {
-	assert.Panics(t, func() { _ = ResultOf[int](nil, nil).String() })
-}
-
 func TestResultMap(t *testing.T) {
 	assertSuccess(t, ResultOf(new(42), nil).Map(strconv.Itoa), "42")
 	assertSuccess(t, ResultOf(new(0), nil).Map(strconv.Itoa), "0")

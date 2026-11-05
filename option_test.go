@@ -7,8 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//func ptr[T any](v T) (p *T) { return &v }
-
 func TestOptionOf(t *testing.T) {
 	elem := new(42)
 	assert.Same(t, elem, OptionOf(elem).GetOrNil(), "OptionOf must keep the given pointer")
@@ -26,7 +24,7 @@ func TestOptionIsPresent(t *testing.T) {
 	assert.False(t, OptionOf[int](nil).IsPresent())
 }
 
-func TestOptionGetOrElse(t *testing.T) {
+func TestOptionGetOrDefault(t *testing.T) {
 	assert.Equal(t, 1, OptionOf(new(1)).GetOrDefault(2))
 	assert.Equal(t, 2, OptionOf[int](nil).GetOrDefault(2))
 }

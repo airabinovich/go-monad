@@ -1,6 +1,7 @@
 package monad
 
 import (
+	"fmt"
 	"slices"
 	"strconv"
 	"testing"
@@ -15,7 +16,22 @@ func assertEmptySequence[T comparable](t *testing.T, s Sequence[T], msgAndArgs .
 	assert.True(t, s.IsEmpty(), msgAndArgs...)
 	assert.False(t, s.First().IsPresent(), msgAndArgs...)
 	assertEmptyList(t, s.ToList(), msgAndArgs...)
-	assertEmptySet(t, s.ToSet(), msgAndArgs...)
+}
+
+func assertSequenceContainsAll[T any](t *testing.T, elements []T, s Sequence[T], msgAndArgs ...any) {
+	t.Helper()
+	seqToList := s.ToList()
+	for _, element := range elements {
+		assert.True(t, seqToList.Contains(element), fmt.Sprintf("%v not in sequence.", element), msgAndArgs)
+	}
+}
+
+func assertSequenceDoesNotContainsAny[T any](t *testing.T, elements []T, s Sequence[T]) {
+	t.Helper()
+	seqToList := s.ToList()
+	for _, element := range elements {
+		assert.False(t, seqToList.Contains(element), fmt.Sprintf("%v not in sequence.", element))
+	}
 }
 
 func TestSequenceOf(t *testing.T) {
@@ -62,7 +78,10 @@ func TestSequenceFirst(t *testing.T) {
 }
 
 func TestSequenceToSet(t *testing.T) {
-	assert.Equal(t, SetOf(1, 2, 3), SequenceOf(1, 2, 2, 3, 1).ToSet(), "duplicates must be removed")
+	assertSetsAreEqual(t,
+		SetOf(HashComparable[int](), EqComparable[int](), 1, 2, 3),
+		SequenceOf(1, 2, 2, 3, 1).ToSet(HashComparable[int](), EqComparable[int]()),
+		"duplicates must be removed")
 }
 
 func TestSequenceMap(t *testing.T) {

@@ -176,7 +176,7 @@ Create one with `SequenceOf(elems...)`, `SequenceOfSlice(slice)`, `SequenceOfSet
 
 ## Good to know
 
-- **Nil and zero values:** a `nil` `*List` or `*Set` behaves like an empty one. The zero value of `Option` and `Sequence` is empty. The one exception is `Set.Add`, which panics on a nil or zero-value Set because it has no hash and equality functions; always create a Set with `SetOf` or `SetOfSlice`.
+- **Nil and zero values:** a `nil` `*List` or `*Set` behaves like an empty one. The zero value of `Option` and `Sequence` is empty. The one exception is `Set.Add`, which panics on a nil or zero-value Set because it has no hash and equality functions; always create a Set with `SetOf` or `SetOfSlice`, or only for comparable types `SetOfComparable`.
 - **Mutation:** `List.Add` and `Set.Add` change the collection in place. `Map`, `FlatMap` and `Filter` never modify their source.
 - **Not concurrent:** none of the types is safe for concurrent use.
 - **Copies:** `First` and `FirstOrNil` on `List`, `Set` and `Sequence` return a copy of the element, so changing it never changes the collection. The copy is shallow: if the element is a pointer, slice or map, it still refers to the same underlying data.

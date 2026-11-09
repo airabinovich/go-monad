@@ -70,7 +70,7 @@ func TestSequenceFirst(t *testing.T) {
 
 func TestSequenceToSet(t *testing.T) {
 	assertSetsAreEqual(t,
-		SetOf(HashComparable[int](), EqComparable[int](), 1, 2, 3),
+		SetOf(1, 2, 3),
 		SequenceOf(1, 2, 2, 3, 1).ToSet(HashComparable[int](), EqComparable[int]()),
 		"duplicates must be removed")
 	assertEmptySet(t, SequenceOf[int]().ToSet(HashComparable[int](), EqComparable[int]()))

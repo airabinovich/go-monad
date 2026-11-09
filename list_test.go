@@ -176,7 +176,7 @@ func TestListChaining(t *testing.T) {
 func TestListToSet(t *testing.T) {
 	assertSetsAreEqual(
 		t,
-		SetOf(HashComparable[int](), EqComparable[int](), 1, 2, 3),
+		SetOf(1, 2, 3),
 		ListOf(1, 2, 2, 3, 1).ToSet(HashComparable[int](), EqComparable[int]()),
 		"duplicates must be removed",
 	)

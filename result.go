@@ -19,9 +19,9 @@ func ResultOf[T any](res *T, err error) (result Result[T]) {
 	return Result[T]{value: res, err: err}
 }
 
-// String returns the error message if the Result holds an error. Otherwise it
+// String returns the error message if the Result holds an error. Otherwise, it
 // returns the value formatted with %v, or "<nil>" if there is no value.
-func (r Result[T]) String() string {
+func (r Result[T]) String() (str string) {
 	if r.err != nil {
 		return r.err.Error()
 	}
@@ -35,7 +35,7 @@ func (r Result[T]) String() string {
 // If the Result holds an error, f is not called and a Result with that error is
 // returned. If the Result has no value, f is not called and an empty success is
 // returned.
-func (r Result[T]) Map[U any](f func(T) U) (res Result[U]) {
+func (r Result[T]) Map[U any](f func(T) U) (result Result[U]) {
 	if r.err != nil {
 		return Result[U]{err: r.err}
 	}
@@ -53,7 +53,7 @@ func (r Result[T]) Map[U any](f func(T) U) (res Result[U]) {
 // If the Result holds an error, f is not called and a Result with that error is
 // returned. If the Result has no value, f is not called and an empty success is
 // returned.
-func (r Result[T]) FlatMap[U any](f func(T) Result[U]) (res Result[U]) {
+func (r Result[T]) FlatMap[U any](f func(T) Result[U]) (result Result[U]) {
 	if r.err != nil {
 		return Result[U]{err: r.err}
 	}
@@ -64,12 +64,12 @@ func (r Result[T]) FlatMap[U any](f func(T) Result[U]) (res Result[U]) {
 }
 
 // IsFailure returns true if there is an error
-func (r Result[T]) IsFailure() bool {
+func (r Result[T]) IsFailure() (isFailure bool) {
 	return r.err != nil
 }
 
 // IsSuccess returns true if there is no error
-func (r Result[T]) IsSuccess() bool {
+func (r Result[T]) IsSuccess() (isSuccess bool) {
 	return r.err == nil
 }
 

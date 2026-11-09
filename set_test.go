@@ -1,6 +1,7 @@
 package monad
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -35,7 +36,7 @@ func TestSetOf(t *testing.T) {
 	assertEmptySet(t, SetOfFunc[int](HashComparable[int](), EqComparable[int]()))
 }
 
-func TestSetOfComparable(t *testing.T) {
+func TestSetOfFunc(t *testing.T) {
 	assertSetsAreEqual(t,
 		SetOfFunc[int](HashComparable[int](), EqComparable[int](), 1, 2, 3),
 		SetOf(1, 2, 3))
@@ -44,12 +45,12 @@ func TestSetOfComparable(t *testing.T) {
 		SetOf("a", "b", "c"))
 }
 
-func TestSetOfSliceComparable(t *testing.T) {
+func TestSetOfSlice(t *testing.T) {
 	assertSetsAreEqual(t, SetOf(1, 2), SetOfSlice([]int{1, 2, 1}), "duplicates must be removed")
 	assertEmptySet(t, SetOfSlice[int](nil))
 }
 
-func TestSetOfSlice(t *testing.T) {
+func TestSetOfSliceFunc(t *testing.T) {
 	set := SetOfSliceFunc(HashComparable[string](), EqComparable[string](), []string{"a", "b", "a"})
 	assert.Equal(t, 2, set.Size(), "duplicates must be removed")
 	assert.True(t, set.Contains("a"))
@@ -97,13 +98,31 @@ func TestSetZeroValuePanics(t *testing.T) {
 	assert.Panics(t, func() { zero.Add(1) }, "Add on the zero value must panic")
 }
 
-// A nil *Set is accepted by the read-only methods, but Add cannot work on it.
+// A nil *Set is accepted by the read-only methods, but Add and Filter cannot work on it.
 func TestSetNilPanics(t *testing.T) {
 	var nilSet *Set[int]
 	assert.Panics(t, func() { nilSet.Add(1) }, "Add on a nil Set must panic")
 
-	filtered := nilSet.Filter(func(int) (keep bool) { return true })
-	assert.Panics(t, func() { filtered.Add(1) }, "the result of Filter on a nil Set has no functions, so Add must panic")
+	called := false
+	assert.Panics(t, func() {
+		nilSet.Filter(func(int) (keep bool) { called = true; return true })
+	}, "Filter on a nil Set must panic")
+	assert.False(t, called, "Filter must not call predicate on an empty Set")
+}
+
+func TestHashComparable(t *testing.T) {
+	hash := HashComparable[string]()
+	assert.Equal(t, hash("a"), hash("a"), "equal values must have the same hash")
+	assert.NotEqual(t, hash("a"), hash("b"))
+
+	hashAny := HashComparable[any]()
+	assert.Panics(t, func() { hashAny([]int{1}) }, "an interface holding a non-comparable value must panic")
+}
+
+func TestEqComparable(t *testing.T) {
+	eq := EqComparable[string]()
+	assert.True(t, eq("a", "a"))
+	assert.False(t, eq("a", "b"))
 }
 
 func TestSetNilFunctionsPanic(t *testing.T) {
@@ -145,7 +164,6 @@ func TestSetNilIsEmpty(t *testing.T) {
 	assertEmptyList(t, s.ToList())
 	assertEmptySequence(t, s.ToSequence())
 	assertEmptySet(t, s.Map(hashFunc, eqFunc, strconv.Quote), "methods on a nil Set must return non-nil Sets")
-	assertEmptySet(t, s.Filter(func(e string) (keep bool) { return true }))
 	assertEmptySet(t, s.FlatMap(hashFunc, eqFunc, func(e string) (single *Set[string]) { return SetOfFunc(hashFunc, eqFunc, e) }))
 
 	assertSetsAreEqual(t, s, SetOfFunc(hashFunc, eqFunc), "a nil Set equals an empty Set")
@@ -278,7 +296,7 @@ func TestSetFilter(t *testing.T) {
 
 func TestSetToList(t *testing.T) {
 	set := SetOf(1, 2, 3)
-	assert.ElementsMatch(t, []int{1, 2, 3}, set.ToList().elements, "ToList returns the elements in unspecified order")
+	assert.ElementsMatch(t, []int{1, 2, 3}, slices.Collect(set.ToList().All()), "ToList returns the elements in unspecified order")
 	assertEmptyList(t, SetOfFunc[int](HashComparable[int](), EqComparable[int]()).ToList())
 }
 

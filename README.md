@@ -64,17 +64,17 @@ A collection of distinct elements in unspecified order. Because elements may be 
 For comparable types use the ready-made `HashComparable[T]()` and `EqComparable[T]()`:
 
 ```go
-set := monad.SetOf(monad.HashComparable[int](), monad.EqComparable[int](), 1, 2, 2, 3)
+set := monad.SetOf(1, 2, 2, 3)
 
 fmt.Println(set.Size())        // 3
 fmt.Println(set.Contains(2))   // true
 ```
 
-With your own functions a Set can hold anything, for example case-insensitive strings:
+`SetOf` uses `HashComparable` and `EqComparable`. With your own functions, `SetOfFunc` lets a Set hold anything, for example case-insensitive strings:
 
 ```go
 hash := func(s string) uint64 { return monad.HashComparable[string]()(strings.ToLower(s)) }
-set := monad.SetOf(hash, strings.EqualFold, "Go", "GO", "Rust")
+set := monad.SetOfFunc(hash, strings.EqualFold, "Go", "GO", "Rust")
 
 fmt.Println(set.Size()) // 2
 ```
@@ -85,7 +85,7 @@ fmt.Println(set.Size()) // 2
 | `Contains(elem)`, `Size()`, `IsEmpty()` | Queries |
 | `Equal(other)` | Same elements, regardless of order |
 | `Map`, `FlatMap` | Also take the `HashFunc` and `EqFunc` of the resulting Set |
-| `Filter(predicate)` | Returns a new Set with the same functions |
+| `Filter(predicate)` | Returns a new Set with the same functions. Panics on a nil or zero-value Set |
 | `First()`, `FirstOrNil()` | An arbitrary element, as a copy |
 | `ToList()`, `ToSequence()` | Conversions, order is unspecified |
 | `String()` | Formatted as `{1,2,3}`, order is unspecified |
@@ -176,7 +176,8 @@ Create one with `SequenceOf(elems...)`, `SequenceOfSlice(slice)`, `SequenceOfSet
 
 ## Good to know
 
-- **Nil and zero values:** a `nil` `*List` or `*Set` behaves like an empty one. The zero value of `Option` and `Sequence` is empty. The one exception is `Set.Add`, which panics on a nil or zero-value Set because it has no hash and equality functions; always create a Set with `SetOf` or `SetOfSlice`, or only for comparable types `SetOfComparable`.
-- **Mutation:** `List.Add` and `Set.Add` change the collection in place. `Map`, `FlatMap` and `Filter` never modify their source.
-- **Not concurrent:** none of the types is safe for concurrent use.
+- **Nil and zero values:** a `nil` `*List` or `*Set` behaves like an empty one. The zero value of `Option` and `Sequence` is empty. The exceptions are `Set.Add` and `Set.Filter`, which panic on a nil or zero-value Set because it has no hash and equality functions. Create a Set with `SetOf`, `SetOfSlice`, `SetOfFunc` or `SetOfSliceFunc`.
+- **Panics:** `SetOfFunc`, `SetOfSliceFunc`, `Set.Map` and `Set.FlatMap` panic if given a nil `HashFunc` or `EqFunc`. Panicking is temporary while the API is unstable.
+- **Mutation:** `List.Add` and `Set.Add` change the collection in place. `Map`, `FlatMap` and `Filter` never modify their source. `List` and `Set` are used through pointers because they mutate. The other types are immutable values.
+- **Not concurrent:** none of the types is safe for concurrent use. This is intentional for now and may change.
 - **Copies:** `First` and `FirstOrNil` on `List`, `Set` and `Sequence` return a copy of the element, so changing it never changes the collection. The copy is shallow: if the element is a pointer, slice or map, it still refers to the same underlying data.

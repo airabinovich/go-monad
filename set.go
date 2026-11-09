@@ -18,12 +18,10 @@ type EqFunc[T any] func(T, T) bool
 // Set is an unordered collection of distinct values of type T. The HashFunc
 // and EqFunc it is created with let it hold non-comparable elements.
 //
-// A nil *Set and the zero value behave like an empty Set, except that Add
-// panics on both and Filter panics on the zero value, because they lack the
-// functions to hash and compare. Filter on a nil Set returns an empty Set that
-// also lacks them, so Add panics on that result. The constructors, Map and
-// FlatMap panic on a nil HashFunc or EqFunc. These panics are a known
-// limitation while the API is unstable.
+// A nil *Set and the zero value behave like an empty Set, except that Add and
+// Filter panic on both, because they lack the functions to hash and compare.
+// The constructors, Map and FlatMap panic on a nil HashFunc or EqFunc. These
+// panics are temporary while the API is unstable.
 type Set[T any] struct {
 	elements map[uint64]*List[T]
 	size     uint32 // kept in sync by Add, the only method that modifies the Set
@@ -34,14 +32,14 @@ type Set[T any] struct {
 // HashComparable returns a HashFunc for any comparable type. It panics if an
 // element is an interface value whose dynamic type is not comparable.
 func HashComparable[T comparable]() (hashFunc HashFunc[T]) {
-	return func(elem T) uint64 {
+	return func(elem T) (hash uint64) {
 		return maphash.Comparable(hashSeed, elem)
 	}
 }
 
 // EqComparable returns an EqFunc for any comparable type.
 func EqComparable[T comparable]() (eqFunc EqFunc[T]) {
-	return func(elem T, other T) bool {
+	return func(elem T, other T) (equal bool) {
 		return elem == other
 	}
 }
@@ -110,13 +108,17 @@ func (s *Set[T]) String() (str string) {
 	return builder.String()
 }
 
-// Add adds element unless an equal one is present. The Set is modified in
-// place and returned. It panics on a nil Set, the zero value, or a Set without
-// HashFunc or EqFunc.
-func (s *Set[T]) Add(element T) (set *Set[T]) {
+// requireFuncs panics if the Set cannot hash and compare elements.
+func (s *Set[T]) requireFuncs(method string) {
 	if s == nil || s.hashFunc == nil || s.eq == nil {
-		panic("monad: Add called on a Set without HashFunc and EqFunc, create the Set with SetOf or SetOfSlice")
+		panic("monad: Set." + method + " called on a Set without HashFunc and EqFunc, create the Set with SetOf or SetOfFunc")
 	}
+}
+
+// Add adds element unless an equal one is present. The Set is modified in
+// place and returned. It panics on a nil Set or the zero value.
+func (s *Set[T]) Add(element T) (set *Set[T]) {
+	s.requireFuncs("Add")
 	if s.elements == nil {
 		s.elements = make(map[uint64]*List[T])
 	}
@@ -212,12 +214,10 @@ func (s *Set[T]) FlatMap[U any](hashFunc HashFunc[U], eqFunc EqFunc[U], f func(T
 	return mapped
 }
 
-// Filter returns a new Set with the elements that satisfy predicate. See Set
-// for its behavior on a nil Set and the zero value.
+// Filter returns a new Set with the elements that satisfy predicate. It panics
+// on a nil Set or the zero value.
 func (s *Set[T]) Filter(predicate func(T) bool) (filtered *Set[T]) {
-	if s == nil {
-		return &Set[T]{elements: map[uint64]*List[T]{}}
-	}
+	s.requireFuncs("Filter")
 	filtered = SetOfFunc(s.hashFunc, s.eq)
 	for _, elems := range s.elements {
 		for elem := range elems.All() {

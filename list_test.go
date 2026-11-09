@@ -13,7 +13,7 @@ import (
 func assertEmptyList[T any](t *testing.T, l *List[T], msgAndArgs ...any) {
 	t.Helper()
 	require.NotNil(t, l, msgAndArgs...)
-	assert.Empty(t, l.elements, msgAndArgs...)
+	assert.Equal(t, 0, l.Len(), msgAndArgs...)
 }
 
 // assertListsAreEqual checks that actual holds the same elements as expected, in the same order.
@@ -92,7 +92,7 @@ func TestListFirst(t *testing.T) {
 	assert.Equal(t, 1, *first)
 
 	*first = 10
-	assert.Equal(t, 1, list.elements[0], "First must return a copy, changing it must not change the List")
+	assertListsAreEqual(t, ListOf(1, 2, 3), list, "First must return a copy, changing it must not change the List")
 	assert.False(t, ListOf[int]().First().IsPresent())
 }
 
@@ -103,7 +103,7 @@ func TestListFirstOrNil(t *testing.T) {
 	assert.Equal(t, 1, *first)
 
 	*first = 10
-	assert.Equal(t, 1, list.elements[0], "FirstOrNil must return a copy, changing it must not change the List")
+	assertListsAreEqual(t, ListOf(1, 2, 3), list, "FirstOrNil must return a copy, changing it must not change the List")
 	assert.NotSame(t, list.FirstOrNil(), list.FirstOrNil(), "every call must return a new pointer")
 	assert.Nil(t, ListOf[int]().FirstOrNil(), "FirstOrNil on an empty List must return nil")
 
@@ -191,8 +191,8 @@ func TestListToSequence(t *testing.T) {
 	sequence := list.ToSequence()
 	assert.Equal(t, list, sequence.ToList(), "order and duplicates must be kept")
 
-	list.elements[0] = 10
-	assert.Equal(t, 10, sequence.First().GetOrDefault(-1), "the List must be read when evaluated, not copied")
+	list.Add(4)
+	assert.Equal(t, ListOf(1, 2, 2, 3, 4), sequence.ToList(), "the List must be read when evaluated, not copied")
 
 	assertEmptySequence(t, ListOf[int]().ToSequence())
 	var l List[int]

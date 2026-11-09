@@ -20,7 +20,7 @@ func ResultOf[T any](res *T, err error) (result Result[T]) {
 }
 
 // String returns the error message if the Result holds an error. Otherwise, it
-// returns the value formatted with %v, or "<nil>" if there is no value.
+// returns the value formatted with fmt.Sprint, or "<nil>" if there is no value.
 func (r Result[T]) String() (str string) {
 	if r.err != nil {
 		return r.err.Error()
@@ -28,7 +28,7 @@ func (r Result[T]) String() (str string) {
 	if r.value == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("%v", *r.value)
+	return fmt.Sprint(*r.value)
 }
 
 // Map applies f to the held value and returns a Result with the result.

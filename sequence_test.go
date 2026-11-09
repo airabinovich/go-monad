@@ -10,7 +10,7 @@ import (
 
 // assertEmptySequence checks that s is empty and that its accessors return
 // non-nil empty collections, so it is safe to chain.
-func assertEmptySequence[T comparable](t *testing.T, s Sequence[T], msgAndArgs ...any) {
+func assertEmptySequence[T any](t *testing.T, s Sequence[T], msgAndArgs ...any) {
 	t.Helper()
 	assert.True(t, s.IsEmpty(), msgAndArgs...)
 	assert.False(t, s.First().IsPresent(), msgAndArgs...)
@@ -22,7 +22,7 @@ func assertEmptySequence[T comparable](t *testing.T, s Sequence[T], msgAndArgs .
 // are detected.
 func assertSequenceElements[T any](t *testing.T, expected []T, s Sequence[T], msgAndArgs ...any) {
 	t.Helper()
-	assert.ElementsMatch(t, expected, s.ToList().elements, msgAndArgs...)
+	assert.ElementsMatch(t, expected, slices.Collect(s.All()), msgAndArgs...)
 }
 
 func TestSequenceOf(t *testing.T) {
@@ -66,6 +66,50 @@ func TestSequenceIsEmpty(t *testing.T) {
 func TestSequenceFirst(t *testing.T) {
 	assert.Equal(t, 1, SequenceOf(1, 2, 3).First().GetOrDefault(-1))
 	assert.False(t, SequenceOf[int]().First().IsPresent())
+
+	calls := 0
+	SequenceOf(1, 2, 3).Map(func(i int) (same int) { calls++; return i }).First()
+	assert.Equal(t, 1, calls, "First must evaluate only the first element")
+}
+
+func TestSequenceFirstOrNil(t *testing.T) {
+	first := SequenceOf(1, 2, 3).FirstOrNil()
+	if assert.NotNil(t, first) {
+		assert.Equal(t, 1, *first)
+	}
+	assert.Nil(t, SequenceOf[int]().FirstOrNil(), "FirstOrNil on an empty Sequence must return nil")
+
+	var zero Sequence[int]
+	assert.Nil(t, zero.FirstOrNil(), "FirstOrNil on the zero value must return nil")
+
+	calls := 0
+	SequenceOf(1, 2, 3).Map(func(i int) (same int) { calls++; return i }).FirstOrNil()
+	assert.Equal(t, 1, calls, "FirstOrNil must evaluate only the first element")
+}
+
+func TestSequenceToList(t *testing.T) {
+	assert.Equal(t, ListOf(1, 2, 1), SequenceOf(1, 2, 1).ToList(), "order and duplicates must be kept")
+	assertEmptyList(t, SequenceOf[int]().ToList())
+
+	var zero Sequence[int]
+	assertEmptyList(t, zero.ToList(), "ToList on the zero value must return an empty List")
+
+	calls := 0
+	sequence := SequenceOf(1, 2).Map(func(i int) (same int) { calls++; return i })
+	assert.Equal(t, 0, calls, "Map must not evaluate anything")
+	sequence.ToList()
+	sequence.ToList()
+	assert.Equal(t, 4, calls, "every ToList call must evaluate the Sequence again")
+}
+
+func TestSequenceOfSet(t *testing.T) {
+	assertSequenceElements(t, []int{1, 2, 3}, SequenceOfSet(SetOf(1, 2, 3)))
+	assertEmptySequence(t, SequenceOfSet(SetOf[int]()))
+	assertEmptySequence(t, SequenceOfSet[int](nil), "a nil Set must give an empty Sequence")
+
+	calls := 0
+	SequenceOfSet(SetOf(1, 2, 3)).Map(func(i int) (same int) { calls++; return i }).First()
+	assert.Equal(t, 1, calls, "an accessor must stop reading the Set early")
 }
 
 func TestSequenceToSet(t *testing.T) {

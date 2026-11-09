@@ -24,6 +24,12 @@ func TestOptionIsPresent(t *testing.T) {
 	assert.False(t, OptionOf[int](nil).IsPresent())
 }
 
+func TestOptionGetOrNil(t *testing.T) {
+	elem := new(0)
+	assert.Same(t, elem, OptionOf(elem).GetOrNil(), "GetOrNil must return the held pointer, not a copy")
+	assert.Nil(t, OptionOf[int](nil).GetOrNil())
+}
+
 func TestOptionGetOrDefault(t *testing.T) {
 	assert.Equal(t, 1, OptionOf(new(1)).GetOrDefault(2))
 	assert.Equal(t, 2, OptionOf[int](nil).GetOrDefault(2))

@@ -12,7 +12,7 @@ import (
 var errBoom = errors.New("boom")
 
 // assertSuccess checks that r is a success holding the expected value.
-func assertSuccess[T comparable](t *testing.T, r Result[T], expected T) {
+func assertSuccess[T any](t *testing.T, r Result[T], expected T) {
 	t.Helper()
 	assert.True(t, r.IsSuccess(), "expected success")
 	assert.False(t, r.IsFailure(), "expected no failure")
@@ -23,7 +23,7 @@ func assertSuccess[T comparable](t *testing.T, r Result[T], expected T) {
 }
 
 // assertFailure checks that r is a failure holding the expected error.
-func assertFailure[T comparable](t *testing.T, r Result[T], expected error) {
+func assertFailure[T any](t *testing.T, r Result[T], expected error) {
 	t.Helper()
 	assert.True(t, r.IsFailure(), "expected failure")
 	assert.False(t, r.IsSuccess(), "expected no success")
@@ -32,7 +32,7 @@ func assertFailure[T comparable](t *testing.T, r Result[T], expected error) {
 }
 
 // assertEmptySuccess checks that r has neither a value nor an error.
-func assertEmptySuccess[T comparable](t *testing.T, r Result[T]) {
+func assertEmptySuccess[T any](t *testing.T, r Result[T]) {
 	t.Helper()
 	assert.True(t, r.IsSuccess(), "expected success")
 	assert.NoError(t, r.Error())
@@ -60,10 +60,8 @@ func TestResultString(t *testing.T) {
 	assert.Equal(t, "boom", ResultOf(new(42), errBoom).String(), "the error takes precedence over the value")
 }
 
-// Documents the current behavior: String dereferences a nil value.
-// If String is changed to handle this case, update this test.
-func TestResultStringWithoutValueNorErrorPanics(t *testing.T) {
-	assert.Panics(t, func() { _ = ResultOf[int](nil, nil).String() })
+func TestResultStringWithoutValueNorError(t *testing.T) {
+	assert.Equal(t, "<nil>", ResultOf[int](nil, nil).String())
 }
 
 func TestResultMap(t *testing.T) {

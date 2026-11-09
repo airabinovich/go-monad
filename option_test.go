@@ -7,8 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//func ptr[T any](v T) (p *T) { return &v }
-
 func TestOptionOf(t *testing.T) {
 	elem := new(42)
 	assert.Same(t, elem, OptionOf(elem).GetOrNil(), "OptionOf must keep the given pointer")
@@ -26,7 +24,13 @@ func TestOptionIsPresent(t *testing.T) {
 	assert.False(t, OptionOf[int](nil).IsPresent())
 }
 
-func TestOptionGetOrElse(t *testing.T) {
+func TestOptionGetOrNil(t *testing.T) {
+	elem := new(0)
+	assert.Same(t, elem, OptionOf(elem).GetOrNil(), "GetOrNil must return the held pointer, not a copy")
+	assert.Nil(t, OptionOf[int](nil).GetOrNil())
+}
+
+func TestOptionGetOrDefault(t *testing.T) {
 	assert.Equal(t, 1, OptionOf(new(1)).GetOrDefault(2))
 	assert.Equal(t, 2, OptionOf[int](nil).GetOrDefault(2))
 }
@@ -97,4 +101,25 @@ func TestOptionChaining(t *testing.T) {
 func TestOptionToSequence(t *testing.T) {
 	assert.Equal(t, ListOf(42), OptionOf(new(42)).ToSequence().ToList())
 	assertEmptySequence(t, OptionOf[int](nil).ToSequence())
+}
+
+func TestOptionString(t *testing.T) {
+	assert.Equal(t, "42", OptionOf(new(42)).String())
+	assert.Equal(t, "0", OptionOf(new(0)).String())
+	assert.Equal(t, "<nil>", OptionOf[int](nil).String())
+}
+
+func TestOptionToResult(t *testing.T) {
+	elem := new(42)
+	called := false
+	present := OptionOf(elem).ToResult(func() (err error) {
+		called = true
+		return errBoom
+	})
+	assert.False(t, called, "ToResult must not call ifEmpty on a present Option")
+	assertSuccess(t, present, 42)
+	assert.Same(t, elem, present.GetOrNil(), "ToResult must keep the given pointer")
+
+	assertFailure(t, OptionOf[int](nil).ToResult(func() (err error) { return errBoom }), errBoom)
+	assertEmptySuccess(t, OptionOf[int](nil).ToResult(func() (err error) { return nil }))
 }
